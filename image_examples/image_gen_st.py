@@ -1,4 +1,7 @@
 import json
+import base64
+from io import BytesIO
+from PIL import Image
 
 import boto3
 import streamlit as st
@@ -112,3 +115,34 @@ def generate_image_titan(text):
 
 
 model = st.selectbox("Select model", ["Amazon Titan", "Stable Diffusion"])
+
+# Text input for user prompt
+user_prompt = st.text_input("Enter your image prompt:")
+
+# Style select box for Stable Diffusion
+if model == "Stable Diffusion":
+    style = st.selectbox("Select style preset", sd_presets)
+else:
+    style = None
+
+# Function to convert base64 string to image
+def base64_to_image(base64_string):
+    img_data = base64.b64decode(base64_string)
+    img = Image.open(BytesIO(img_data))
+    return img
+
+## Button to generate image
+if st.button("Generate Image"):
+    if user_prompt:
+        with st.spinner("Generating image..."):
+            if model == "Amazon Titan":
+                base64_image = generate_image_titan(user_prompt)
+            else:  # Stable Diffusion
+                base64_image = generate_image_sd(user_prompt, style)
+            
+            # Convert base64 to image and display
+            image = base64_to_image(base64_image)
+            st.image(image, caption="Generated Image", use_column_width=True)
+    else:
+        st.warning("Please enter a prompt before generating an image.")
+
